@@ -448,6 +448,48 @@
             margin-top: 30px;
         }
         
+        .hint-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff9e6;
+            border-radius: 10px;
+            border-left: 5px solid #FFD700;
+        }
+        
+        .hint-content {
+            color: #8a6d3b;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .hint-btn {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .hint-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 176, 155, 0.3);
+        }
+        
+        .hint-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
         /* 结果页面 */
         .result-container {
             text-align: center;
@@ -749,6 +791,15 @@
                         </div>
                         <div class="rule-item">
                             <div class="rule-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="rule-content">
+                                <h3>提示功能</h3>
+                                <p>每道题可以使用提示功能，但使用提示会减少该题获得的星星数量。成语模式使用提示得1星，歌词模式使用提示得2星。</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <div class="rule-icon">
                                 <i class="fas fa-trophy"></i>
                             </div>
                             <div class="rule-content">
@@ -783,6 +834,16 @@
                     <div class="question" id="idiomQuestion">题目加载中...</div>
                     <div class="idiom-hint" id="idiomHint">提示：</div>
                     
+                    <div id="idiomHintContainer" style="display: none;">
+                        <div class="hint-container">
+                            <div class="hint-content" id="idiomHintContent"></div>
+                        </div>
+                    </div>
+                    
+                    <button class="hint-btn" id="idiomHintBtn">
+                        <i class="fas fa-lightbulb"></i> 获取提示 (消耗1⭐)
+                    </button>
+                    
                     <div class="options" id="idiomOptions">
                         <!-- 选项会通过JavaScript动态生成 -->
                     </div>
@@ -815,6 +876,16 @@
                     <h3 class="question-title">歌词猜歌名 (第<span id="lyricQuestionNum">1</span>/8题)</h3>
                     <div class="question" id="lyricQuestion">歌词加载中...</div>
                     
+                    <div id="lyricHintContainer" style="display: none;">
+                        <div class="hint-container">
+                            <div class="hint-content" id="lyricHintContent"></div>
+                        </div>
+                    </div>
+                    
+                    <button class="hint-btn" id="lyricHintBtn">
+                        <i class="fas fa-lightbulb"></i> 获取提示 (消耗1⭐)
+                    </button>
+                    
                     <div class="options" id="lyricOptions">
                         <!-- 选项会通过JavaScript动态生成 -->
                     </div>
@@ -844,6 +915,10 @@
                         <div class="result-stat">
                             <div class="result-stat-value" id="resultStars">0</div>
                             <div class="stat-label">获得星星</div>
+                        </div>
+                        <div class="result-stat">
+                            <div class="result-stat-value" id="resultHints">0</div>
+                            <div class="stat-label">提示使用</div>
                         </div>
                     </div>
                     
@@ -889,114 +964,134 @@
                 stars: 0,
                 correctAnswers: 0,
                 startTime: null,
-                totalTime: 0
+                totalTime: 0,
+                hintsUsed: 0,
+                currentQuestionHintUsed: false
             }
         };
 
-        // 成语题库
+        // 成语题库（增加提示内容）
         const idiomQuestions = [
             {
                 question: "一__知秋",
                 answer: "叶",
                 hint: "比喻通过个别的细微的迹象，可以看到整个形势的发展趋向与结果。",
+                hintText: "这个成语来自《淮南子·说山训》，意思是看到一片叶子落下就知道秋天来了。",
                 options: ["叶", "夜", "页", "业"]
             },
             {
                 question: "画龙点__",
                 answer: "睛",
                 hint: "比喻写文章或讲话时，在关键处用几句话点明实质，使内容更加生动有力。",
+                hintText: "传说梁代画家张僧繇在墙上画了四条龙，没有画眼睛，后来点了其中两条的眼睛，龙就飞走了。",
                 options: ["睛", "精", "晶", "京"]
             },
             {
                 question: "守株待__",
                 answer: "兔",
                 hint: "比喻死守狭隘经验，不知变通，或抱着侥幸心理妄想不劳而获。",
+                hintText: "出自《韩非子·五蠹》，讲一个农夫捡到撞死在树桩上的兔子后，就守在树桩旁等待更多的兔子。",
                 options: ["兔", "鹿", "羊", "猪"]
             },
             {
                 question: "对牛弹__",
                 answer: "琴",
                 hint: "比喻对不懂道理的人讲道理，对外行人说内行话。也用来讥笑说话的人不看对象。",
-                options: ["琴", "琴", "琴", "琴"] // 注意：这里为了演示，四个选项相同，实际应不同
+                hintText: "出自《庄子·齐物论》，原意是给牛弹琴，牛听不懂。现在比喻说话不看对象。",
+                options: ["琴", "瑟", "筝", "琵"]
             },
             {
                 question: "狐假__威",
                 answer: "虎",
                 hint: "比喻仰仗或倚仗别人的权势来欺压、恐吓人。",
+                hintText: "出自《战国策·楚策一》，狐狸借老虎的威势吓唬其他动物。",
                 options: ["虎", "狼", "豹", "狮"]
             },
             {
                 question: "亡羊补__",
                 answer: "牢",
                 hint: "比喻出了问题以后想办法补救，免得以后继续受损失。",
+                hintText: "出自《战国策·楚策四》，意思是丢失了羊以后才修补羊圈。",
                 options: ["牢", "圈", "栏", "网"]
             },
             {
                 question: "井底之__",
                 answer: "蛙",
                 hint: "比喻见识狭窄的人。",
+                hintText: "出自《庄子·秋水》，井里的青蛙只能看到井口那么大的一片天。",
                 options: ["蛙", "鱼", "虾", "虫"]
             },
             {
                 question: "望梅止__",
                 answer: "渴",
                 hint: "比喻愿望无法实现，用空想安慰自己。",
+                hintText: "出自《世说新语·假谲》，曹操说前方有梅林，士兵们想到梅子就流口水，暂时解渴。",
                 options: ["渴", "饿", "累", "困"]
             },
             {
                 question: "掩耳盗__",
                 answer: "铃",
                 hint: "比喻自己欺骗自己，明明掩盖不住的事情偏要想法子掩盖。",
+                hintText: "出自《吕氏春秋·自知》，有人偷铃铛时捂住自己的耳朵，以为别人也听不到。",
                 options: ["铃", "钟", "鼓", "锣"]
             },
             {
                 question: "杯弓__影",
                 answer: "蛇",
                 hint: "比喻因疑神疑鬼而引起恐惧。",
+                hintText: "出自《晋书·乐广传》，有人把墙上的弓影误认为是酒杯中的蛇，吓出病来。",
                 options: ["蛇", "龙", "虫", "影"]
             }
         ];
 
-        // 歌词题库
+        // 歌词题库（增加提示内容）
         const lyricQuestions = [
             {
                 lyric: "我和你吻别，在无人的街",
                 answer: "吻别",
+                hintText: "这首歌是张学友1993年发行的专辑《吻别》的主打歌，也是他的代表作之一。",
                 options: ["吻别", "祝福", "一路上有你", "忘记你我做不到"]
             },
             {
                 lyric: "让我欢喜让我忧，让我甘心为了你付出我所有",
                 answer: "让我欢喜让我忧",
+                hintText: "这是周华健1991年的歌曲，由李宗盛作词作曲，收录在同名专辑中。",
                 options: ["让我欢喜让我忧", "朋友", "爱相随", "花心"]
             },
             {
                 lyric: "你问我爱你有多深，我爱你有几分",
                 answer: "月亮代表我的心",
+                hintText: "这首歌原唱是陈芬兰，但最著名的版本是邓丽君的演唱，发表于1977年。",
                 options: ["月亮代表我的心", "甜蜜蜜", "小城故事", "但愿人长久"]
             },
             {
                 lyric: "甜蜜蜜，你笑得甜蜜蜜",
                 answer: "甜蜜蜜",
+                hintText: "这首歌是邓丽君1979年的歌曲，也是电影《甜蜜蜜》的主题曲。",
                 options: ["甜蜜蜜", "小城故事", "我只在乎你", "月亮代表我的心"]
             },
             {
                 lyric: "我送你离开，千里之外，你无声黑白",
                 answer: "千里之外",
+                hintText: "这首歌由周杰伦和费玉清合唱，收录在周杰伦2006年的专辑《依然范特西》中。",
                 options: ["千里之外", "青花瓷", "菊花台", "东风破"]
             },
             {
                 lyric: "简单点，说话的方式简单点",
                 answer: "演员",
+                hintText: "这是薛之谦2015年发行的歌曲，收录在专辑《绅士》中。",
                 options: ["演员", "丑八怪", "绅士", "你还要我怎样"]
             },
             {
                 lyric: "谁在用琵琶弹奏一曲东风破",
                 answer: "东风破",
+                hintText: "这是周杰伦2003年发行的歌曲，收录在专辑《叶惠美》中，是中国风歌曲的代表作。",
                 options: ["东风破", "青花瓷", "发如雪", "菊花台"]
             },
             {
                 lyric: "如果那两个字没有颤抖，我不会发现我难受",
                 answer: "十年",
+                hintText: "这是陈奕迅2003年发行的歌曲，收录在专辑《黑白灰》中，是他的代表作之一。",
                 options: ["十年", "爱情转移", "K歌之王", "你的背包"]
             }
         ];
@@ -1064,6 +1159,10 @@
             // 下一题按钮
             document.getElementById('nextIdiomQuestion').addEventListener('click', nextQuestion);
             document.getElementById('nextLyricQuestion').addEventListener('click', nextQuestion);
+            
+            // 提示按钮
+            document.getElementById('idiomHintBtn').addEventListener('click', () => useHint('idiom'));
+            document.getElementById('lyricHintBtn').addEventListener('click', () => useHint('lyric'));
             
             // 返回主界面按钮
             document.getElementById('backToHome').addEventListener('click', () => showPage('gameHome'));
@@ -1239,6 +1338,8 @@
             gameData.currentGame.correctAnswers = 0;
             gameData.currentGame.startTime = new Date();
             gameData.currentGame.totalTime = 0;
+            gameData.currentGame.hintsUsed = 0;
+            gameData.currentGame.currentQuestionHintUsed = false;
             
             // 显示游戏页面
             showPage(mode === 'idiom' ? 'idiomGame' : 'lyricGame');
@@ -1265,11 +1366,21 @@
             const question = game.questions[game.currentQuestionIndex];
             const isIdiom = game.mode === 'idiom';
             
+            // 重置当前题目提示状态
+            game.currentQuestionHintUsed = false;
+            
             // 更新题目编号
             if (isIdiom) {
                 document.getElementById('idiomQuestionNum').textContent = game.currentQuestionIndex + 1;
                 document.getElementById('idiomQuestion').textContent = question.question;
                 document.getElementById('idiomHint').textContent = `提示：${question.hint}`;
+                
+                // 隐藏提示容器
+                document.getElementById('idiomHintContainer').style.display = 'none';
+                
+                // 重置提示按钮
+                document.getElementById('idiomHintBtn').disabled = false;
+                document.getElementById('idiomHintBtn').innerHTML = '<i class="fas fa-lightbulb"></i> 获取提示 (消耗1⭐)';
                 
                 // 更新爱心显示
                 updateHearts('heart', game.hearts, 1);
@@ -1298,6 +1409,13 @@
                 // 歌词模式
                 document.getElementById('lyricQuestionNum').textContent = game.currentQuestionIndex + 1;
                 document.getElementById('lyricQuestion').textContent = `"${question.lyric}"`;
+                
+                // 隐藏提示容器
+                document.getElementById('lyricHintContainer').style.display = 'none';
+                
+                // 重置提示按钮
+                document.getElementById('lyricHintBtn').disabled = false;
+                document.getElementById('lyricHintBtn').innerHTML = '<i class="fas fa-lightbulb"></i> 获取提示 (消耗1⭐)';
                 
                 // 更新爱心显示
                 updateHearts('heart', game.hearts, 4);
@@ -1356,6 +1474,43 @@
             }, 1000);
         }
 
+        // 使用提示
+        function useHint(mode) {
+            const game = gameData.currentGame;
+            const question = game.questions[game.currentQuestionIndex];
+            const isIdiom = mode === 'idiom';
+            
+            // 如果已经使用过提示，不能再使用
+            if (game.currentQuestionHintUsed) {
+                alert('本题已经使用过提示了！');
+                return;
+            }
+            
+            // 显示提示内容
+            if (isIdiom) {
+                document.getElementById('idiomHintContent').textContent = question.hintText;
+                document.getElementById('idiomHintContainer').style.display = 'block';
+                document.getElementById('idiomHintBtn').innerHTML = '<i class="fas fa-lightbulb"></i> 提示已使用';
+                document.getElementById('idiomHintBtn').disabled = true;
+            } else {
+                document.getElementById('lyricHintContent').textContent = question.hintText;
+                document.getElementById('lyricHintContainer').style.display = 'block';
+                document.getElementById('lyricHintBtn').innerHTML = '<i class="fas fa-lightbulb"></i> 提示已使用';
+                document.getElementById('lyricHintBtn').disabled = true;
+            }
+            
+            // 标记当前题目已使用提示
+            game.currentQuestionHintUsed = true;
+            game.hintsUsed++;
+            
+            // 提示使用动画效果
+            const hintBtn = isIdiom ? document.getElementById('idiomHintBtn') : document.getElementById('lyricHintBtn');
+            hintBtn.style.animation = 'none';
+            setTimeout(() => {
+                hintBtn.style.animation = 'pulse 0.5s';
+            }, 10);
+        }
+
         // 选择选项
         function selectOption(selected, correct, element) {
             const game = gameData.currentGame;
@@ -1375,7 +1530,13 @@
                 // 回答正确
                 element.classList.add('correct');
                 game.correctAnswers++;
-                game.stars += isIdiom ? 2 : 3; // 成语得2星，歌词得3星
+                
+                // 根据是否使用提示计算星星
+                let starsEarned = isIdiom ? 2 : 3;
+                if (game.currentQuestionHintUsed) {
+                    starsEarned = isIdiom ? 1 : 2; // 使用提示后减少星星
+                }
+                game.stars += starsEarned;
                 
                 // 更新星星显示
                 if (isIdiom) {
@@ -1594,6 +1755,7 @@
             document.getElementById('resultCorrect').textContent = game.correctAnswers;
             document.getElementById('resultTime').textContent = game.totalTime;
             document.getElementById('resultStars').textContent = game.stars;
+            document.getElementById('resultHints').textContent = game.hintsUsed;
             
             showPage('result');
         }
